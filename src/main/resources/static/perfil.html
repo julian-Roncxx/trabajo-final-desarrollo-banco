@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BckdBank · Mi perfil</title>
+<style>
+  :root {
+    --primary: #2563EB;
+    --accent: #10B981;
+    --bg: #F5F7FB;
+    --surface: #FFFFFF;
+    --text: #0F172A;
+    --muted: #64748B;
+    --border: #E2E8F0;
+    --danger: #DC2626;
+    --radius: 14px;
+    --gap: 20px;
+    --font-size: 15px;
+  }
+  [data-theme="dark"] {
+    --bg: #0B1120;
+    --surface: #141B2D;
+    --text: #E2E8F0;
+    --muted: #94A3B8;
+    --border: #243049;
+  }
+  [data-compact="true"] { --gap: 12px; --radius: 10px; }
+  * { box-sizing: border-box; }
+  html { font-size: var(--font-size); }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); transition: background .2s, color .2s;
+  }
+  header {
+    background: var(--primary); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-size: 1.15rem; margin: 0; letter-spacing: .3px; }
+  header button { background: rgba(255,255,255,.18); color: #fff; border: 0; }
+  main { max-width: 980px; margin: 0 auto; padding: var(--gap); display: grid; gap: var(--gap); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: calc(var(--gap) + 4px);
+  }
+  .card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .card > p.sub { margin: 0 0 var(--gap); color: var(--muted); font-size: .9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  label { display: grid; gap: 6px; font-size: .85rem; color: var(--muted); }
+  input, select, textarea {
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 11px; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 8px; padding: 9px 16px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  }
+  button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  button.danger { color: var(--danger); }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: var(--gap); }
+
+  /* Cabecera del perfil */
+  .hero { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .avatar {
+    width: 112px; height: 112px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+    display: grid; place-items: center; font-size: 2.4rem; font-weight: 700; color: #fff;
+    background: var(--primary); border: 4px solid var(--surface); box-shadow: 0 0 0 3px var(--accent);
+  }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .hero h2 { font-size: 1.5rem; margin: 0; }
+  .hero .meta { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+  .badge {
+    display: inline-block; background: var(--accent); color: #fff; font-size: .75rem;
+    padding: 3px 10px; border-radius: 999px; margin-top: 8px;
+  }
+  .balance-demo { margin-top: 10px; font-size: .95rem; }
+  .balance-demo b { font-variant-numeric: tabular-nums; }
+
+  /* Temas */
+  .presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+  .preset {
+    padding: 10px; text-align: left; display: grid; gap: 8px; font-size: .85rem;
+  }
+  .preset .sw { display: flex; height: 26px; border-radius: 6px; overflow: hidden; }
+  .preset .sw span { flex: 1; }
+  .preset[aria-pressed="true"] { outline: 2px solid var(--primary); }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; }
+  .seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
+  .color-row { display: flex; gap: 10px; align-items: center; }
+  .color-row input[type=color] { width: 46px; height: 38px; padding: 2px; }
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); color: var(--text); font-size: .95rem; }
+  .switch:last-child { border-bottom: 0; }
+  .switch input { width: 42px; height: 22px; accent-color: var(--primary); }
+
+  /* Login */
+  #login { max-width: 380px; margin: 60px auto; }
+  .hidden { display: none !important; }
+  #toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 10px;
+    font-size: .9rem; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  #toast.show { opacity: 1; }
+  #toast.error { background: var(--danger); color: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="index.html" style="color:inherit;text-decoration:none">← BckdBank</a></h1>
+  <div style="display:flex;gap:8px">
+    <a href="index.html" style="color:#fff;align-self:center;font-size:.9rem;margin-right:6px">Volver al inicio</a>
+    <button id="logoutBtn" class="hidden">Cerrar sesión</button>
+  </div>
+</header>
+
+<!-- ======================= LOGIN ======================= -->
+<section id="login" class="card hidden">
+  <h2>Iniciar sesión</h2>
+  <p class="sub">Ingresa para personalizar tu perfil.</p>
+  <form id="loginForm" class="grid" style="grid-template-columns:1fr">
+    <label>Correo <input name="email" type="email" required autocomplete="username"></label>
+    <label>Contraseña <input name="password" type="password" required autocomplete="current-password"></label>
+    <button class="primary" type="submit">Entrar</button>
+  </form>
+</section>
+
+<!-- ======================= PERFIL ======================= -->
+<main id="app" class="hidden">
+
+  <section class="card hero">
+    <div class="avatar" id="avatar"></div>
+    <div style="flex:1;min-width:220px">
+      <h2 id="heroName"></h2>
+      <div class="meta" id="heroMeta"></div>
+      <div class="meta" id="heroBio"></div>
+      <span class="badge" id="heroSince"></span>
+      <div class="balance-demo">Saldo de ejemplo: <b id="balanceDemo"></b>
+        <button id="revealBtn" type="button" style="padding:2px 10px;margin-left:6px">Mostrar</button></div>
+    </div>
+    <div style="display:grid;gap:8px">
+      <input type="file" id="avatarInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      <button class="primary" type="button" id="uploadBtn">Cambiar foto</button>
+      <button class="danger" type="button" id="deleteAvatarBtn">Quitar foto</button>
+      <label style="font-size:.8rem">Color de iniciales
+        <input type="color" id="avatarColor"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Datos personales</h2>
+    <p class="sub">Esta información solo la ves tú.</p>
+    <form id="profileForm">
+      <div class="grid">
+        <label>Nombre <input name="firstName" maxlength="50" required></label>
+        <label>Apellido <input name="lastName" maxlength="50" required></label>
+        <label>Nombre visible / apodo <input name="displayName" maxlength="50"></label>
+        <label>Correo <input name="email" disabled></label>
+        <label>Teléfono <input name="phone" maxlength="20" placeholder="+57 300 123 4567"></label>
+        <label>Fecha de nacimiento <input name="birthDate" type="date"></label>
+        <label>Ciudad <input name="city" maxlength="60"></label>
+        <label>País <input name="country" maxlength="60"></label>
+      </div>
+      <label style="margin-top:14px">Biografía <textarea name="bio" maxlength="250"
+        placeholder="Cuéntanos algo sobre ti (máx. 250 caracteres)"></textarea></label>
+      <div class="actions"><button class="primary" type="submit">Guardar datos</button></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Apariencia</h2>
+    <p class="sub">Los cambios se ven al instante y se guardan en tu cuenta.</p>
+
+    <label style="margin-bottom:8px">Temas predefinidos</label>
+    <div class="presets" id="presets"></div>
+
+    <div class="grid" style="margin-top:var(--gap)">
+      <label>Color principal
+        <div class="color-row"><input type="color" id="primaryColor"><input id="primaryHex" maxlength="7"></div></label>
+      <label>Color de acento
+        <div class="color-row"><input type="color" id="accentColor"><input id="accentHex" maxlength="7"></div></label>
+      <label>Modo
+        <div class="seg" id="themeMode">
+          <button type="button" data-v="LIGHT">Claro</button>
+          <button type="button" data-v="DARK">Oscuro</button>
+          <button type="button" data-v="SYSTEM">Sistema</button>
+        </div></label>
+      <label>Tamaño de letra
+        <div class="seg" id="fontSize">
+          <button type="button" data-v="SMALL">A-</button>
+          <button type="button" data-v="MEDIUM">A</button>
+          <button type="button" data-v="LARGE">A+</button>
+        </div></label>
+      <label>Idioma
+        <select id="language"><option value="ES">Español</option><option value="EN">English</option><option value="PT">Português</option></select></label>
+      <label>Moneda
+        <select id="currency">
+          <option>COP</option><option>USD</option><option>EUR</option><option>MXN</option>
+          <option>PEN</option><option>CLP</option><option>ARS</option><option>BRL</option>
+        </select></label>
+    </div>
+
+    <div style="margin-top:var(--gap)">
+      <div class="switch">Modo compacto <input type="checkbox" id="compactMode"></div>
+      <div class="switch">Ocultar saldos por defecto <input type="checkbox" id="hideBalances"></div>
+    </div>
+    <div class="actions">
+      <button class="primary" type="button" id="savePrefs">Guardar apariencia</button>
+      <button type="button" id="resetPrefs">Restablecer</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Notificaciones</h2>
+    <p class="sub">Elige cómo quieres enterarte de tus movimientos.</p>
+    <div class="switch">Correo electrónico <input type="checkbox" class="notif" id="emailNotifications"></div>
+    <div class="switch">Notificaciones push <input type="checkbox" class="notif" id="pushNotifications"></div>
+    <div class="switch">Alerta por cada transferencia <input type="checkbox" class="notif" id="transactionAlerts"></div>
+  </section>
+
+  <section class="card">
+    <h2>Seguridad</h2>
+    <p class="sub">Cambia tu contraseña.</p>
+    <form id="passwordForm" class="grid">
+      <label>Contraseña actual <input name="currentPassword" type="password" required autocomplete="current-password"></label>
+      <label>Nueva contraseña <input name="newPassword" type="password" minlength="6" required autocomplete="new-password"></label>
+      <label>Confirmar <input name="confirmPassword" type="password" minlength="6" required autocomplete="new-password"></label>
+      <div style="align-self:end"><button class="primary" type="submit">Actualizar contraseña</button></div>
+    </form>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+  const API = '/api/v1';
+  const $ = (id) => document.getElementById(id);
+  const FONT = { SMALL: '13.5px', MEDIUM: '15px', LARGE: '17px' };
+  const LOCALE = { ES: 'es-CO', EN: 'en-US', PT: 'pt-BR' };
+
+  let token = null;
+  try { token = localStorage.getItem('bckdbank_token'); } catch (_) {}
+  let profile = null;
+  let prefs = null;          // preferencias editadas (vista previa)
+  let balanceVisible = false;
+  let avatarObjectUrl = null;
+
+  // ---------------------------------------------------------------- utilidades
+  function toast(msg, isError = false) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    clearTimeout(t._h);
+    t._h = setTimeout(() => (t.className = ''), 2800);
+  }
+
+  async function api(path, opts = {}) {
+    const headers = Object.assign({}, opts.headers || {});
+    if (token) headers.Authorization = 'Bearer ' + token;
+    if (opts.json !== undefined) {
+      headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(opts.json);
+    }
+    const res = await fetch(API + path, { ...opts, headers });
+    if (res.status === 401 || res.status === 403) { logout(); throw new Error('Sesión expirada'); }
+    if (!res.ok) {
+      let msg = 'Error ' + res.status;
+      try {
+        const e = await res.json();
+        msg = e.message || (e.details ? Object.values(e.details).join('. ') : msg);
+      } catch (_) {}
+      throw new Error(msg);
+    }
+    const type = res.headers.get('Content-Type') || '';
+    return type.includes('application/json') ? res.json() : res;
+  }
+
+  function logout() {
+    token = null;
+    try { localStorage.removeItem('bckdbank_token'); } catch (_) {}
+    $('app').classList.add('hidden');
+    $('logoutBtn').classList.add('hidden');
+    $('login').classList.remove('hidden');
+  }
+
+  // ----------------------------------------------------------- aplicar tema
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+  function applyTheme(p) {
+    const root = document.documentElement.style;
+    root.setProperty('--primary', p.primaryColor);
+    root.setProperty('--accent', p.accentColor);
+    root.setProperty('--font-size', FONT[p.fontSize] || FONT.MEDIUM);
+    const dark = p.themeMode === 'DARK' || (p.themeMode === 'SYSTEM' && systemDark.matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    document.documentElement.dataset.compact = String(!!p.compactMode);
+    document.documentElement.lang = (p.language || 'ES').toLowerCase();
+    renderBalance();
+    syncPrefControls();
+  }
+  systemDark.addEventListener('change', () => prefs && applyTheme(prefs));
+
+  function renderBalance() {
+    if (!prefs) return;
+    const amount = 1000; // saldo inicial de ejemplo
+    const formatted = new Intl.NumberFormat(LOCALE[prefs.language] || 'es-CO',
+      { style: 'currency', currency: prefs.currency }).format(amount);
+    const hidden = prefs.hideBalances && !balanceVisible;
+    $('balanceDemo').textContent = hidden ? '••••••' : formatted;
+    $('revealBtn').textContent = hidden ? 'Mostrar' : 'Ocultar';
+    $('revealBtn').style.display = prefs.hideBalances ? '' : 'none';
+  }
+
+  function syncPrefControls() {
+    $('primaryColor').value = prefs.primaryColor; $('primaryHex').value = prefs.primaryColor;
+    $('accentColor').value = prefs.accentColor;   $('accentHex').value = prefs.accentColor;
+    for (const id of ['themeMode', 'fontSize']) {
+      for (const b of $(id).querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === prefs[id]));
+    }
+    $('language').value = prefs.language;
+    $('currency').value = prefs.currency;
+    $('compactMode').checked = prefs.compactMode;
+    $('hideBalances').checked = prefs.hideBalances;
+    for (const el of document.querySelectorAll('.notif')) el.checked = prefs[el.id];
+    for (const b of $('presets').children) {
+      b.setAttribute('aria-pressed', String(
+        b.dataset.primary === prefs.primaryColor.toUpperCase() && b.dataset.accent === prefs.accentColor.toUpperCase()));
+    }
+  }
+
+  // ---------------------------------------------------------------- render
+  async function renderProfile(p) {
+    profile = p;
+    $('heroName').textContent = p.displayName && p.displayName !== p.firstName
+      ? `${p.displayName} (${p.firstName} ${p.lastName})` : `${p.firstName} ${p.lastName}`;
+    $('heroMeta').textContent = [p.email, [p.city, p.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+    $('heroBio').textContent = p.bio || '';
+    $('heroSince').textContent = p.memberSince
+      ? 'Cliente desde ' + new Date(p.memberSince).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+      : `${p.accountsCount} cuenta(s)`;
+    $('avatarColor').value = p.avatarColor || '#2563EB';
+    $('deleteAvatarBtn').disabled = !p.hasAvatar;
+
+    const f = $('profileForm').elements;
+    for (const k of ['firstName', 'lastName', 'displayName', 'email', 'phone', 'birthDate', 'city', 'country', 'bio']) {
+      f[k].value = p[k] ?? '';
+    }
+    await renderAvatar();
+  }
+
+  async function renderAvatar() {
+    const box = $('avatar');
+    box.replaceChildren();
+    box.style.background = profile.avatarColor || 'var(--primary)';
+    if (avatarObjectUrl) { URL.revokeObjectURL(avatarObjectUrl); avatarObjectUrl = null; }
+    if (profile.hasAvatar) {
+      try {
+        // La foto requiere el token, así que se descarga con fetch y se muestra como blob.
+        const res = await api('/profile/avatar');
+        avatarObjectUrl = URL.createObjectURL(await res.blob());
+        const img = document.createElement('img');
+        img.alt = 'Foto de perfil';
+        img.src = avatarObjectUrl;
+        box.appendChild(img);
+        return;
+      } catch (_) { /* si falla, mostramos iniciales */ }
+    }
+    box.textContent = profile.initials || '?';
+  }
+
+  async function loadAll() {
+    const [p, themes] = await Promise.all([api('/profile'), api('/profile/themes')]);
+    const presets = $('presets');
+    presets.replaceChildren(...themes.map((t) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'preset';
+      b.dataset.primary = t.primaryColor.toUpperCase(); b.dataset.accent = t.accentColor.toUpperCase();
+      const sw = document.createElement('div'); sw.className = 'sw';
+      for (const c of [t.primaryColor, t.accentColor]) { const s = document.createElement('span'); s.style.background = c; sw.appendChild(s); }
+      const name = document.createElement('span'); name.textContent = t.name;
+      b.append(sw, name);
+      b.addEventListener('click', () => { prefs.primaryColor = t.primaryColor; prefs.accentColor = t.accentColor; applyTheme(prefs); });
+      return b;
+    }));
+    prefs = { ...p.preferences };
+    balanceVisible = false;
+    applyTheme(prefs);
+    await renderProfile(p);
+    $('login').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    $('logoutBtn').classList.remove('hidden');
+  }
+
+  // ---------------------------------------------------------------- eventos
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target.elements;
+    try {
+      const r = await api('/auth/login', { method: 'POST', json: { email: f.email.value, password: f.password.value } });
+      token = r.token;
+      try { localStorage.setItem('bckdbank_token', token); } catch (_) {}
+      await loadAll();
+    } catch (err) { toast(err.message === 'Sesión expirada' ? 'Correo o contraseña incorrectos' : err.message, true); }
+  });
+  $('logoutBtn').addEventListener('click', logout);
+
+  $('uploadBtn').addEventListener('click', () => $('avatarInput').click());
+  $('avatarInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return toast('La imagen no puede superar 2 MB', true);
+    const fd = new FormData();
+    fd.append('file', file);
+    try { await renderProfile(await api('/profile/avatar', { method: 'POST', body: fd })); toast('Foto actualizada'); }
+    catch (err) { toast(err.message, true); }
+  });
+  $('deleteAvatarBtn').addEventListener('click', async () => {
+    try { await renderProfile(await api('/profile/avatar', { method: 'DELETE' })); toast('Foto eliminada'); }
+    catch (err) { toast(err.message, true); }
+  });
+  $('avatarColor').addEventListener('change', async (e) => {
+    try { await renderProfile(await api('/profile', { method: 'PATCH', json: { avatarColor: e.target.value } })); }
+    catch (err) { toast(err.message, true); }
+  });
+
+  $('profileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target.elements;
+    const body = {};
+    for (const k of ['firstName', 'lastName', 'displayName', 'phone', 'city', 'country', 'bio']) body[k] = f[k].value;
+    if (f.birthDate.value) body.birthDate = f.birthDate.value;
+    try { await renderProfile(await api('/profile', { method: 'PATCH', json: body })); toast('Datos guardados'); }
+    catch (err) { toast(err.message, true); }
+  });
+
+  // Vista previa en vivo de las preferencias
+  const bindColor = (picker, hex, key) => {
+    $(picker).addEventListener('input', (e) => { prefs[key] = e.target.value.toUpperCase(); applyTheme(prefs); });
+    $(hex).addEventListener('change', (e) => {
+      const v = e.target.value.trim();
+      if (/^#[0-9A-Fa-f]{6}$/.test(v)) { prefs[key] = v.toUpperCase(); applyTheme(prefs); }
+      else { toast('Usa el formato #RRGGBB', true); e.target.value = prefs[key]; }
+    });
+  };
+  bindColor('primaryColor', 'primaryHex', 'primaryColor');
+  bindColor('accentColor', 'accentHex', 'accentColor');
+  for (const id of ['themeMode', 'fontSize']) {
+    $(id).addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      prefs[id] = b.dataset.v; applyTheme(prefs);
+    });
+  }
+  for (const id of ['language', 'currency']) $(id).addEventListener('change', (e) => { prefs[id] = e.target.value; applyTheme(prefs); });
+  for (const id of ['compactMode', 'hideBalances']) $(id).addEventListener('change', (e) => { prefs[id] = e.target.checked; applyTheme(prefs); });
+  $('revealBtn').addEventListener('click', () => { balanceVisible = !balanceVisible; renderBalance(); });
+
+  $('savePrefs').addEventListener('click', async () => {
+    try {
+      const { emailNotifications, pushNotifications, transactionAlerts, ...look } = prefs;
+      prefs = { ...prefs, ...(await api('/profile/preferences', { method: 'PATCH', json: look })) };
+      applyTheme(prefs); toast('Apariencia guardada');
+    } catch (err) { toast(err.message, true); }
+  });
+  $('resetPrefs').addEventListener('click', async () => {
+    try { prefs = await api('/profile/preferences/reset', { method: 'POST' }); applyTheme(prefs); toast('Preferencias restablecidas'); }
+    catch (err) { toast(err.message, true); }
+  });
+  // Las notificaciones se guardan al instante
+  for (const el of document.querySelectorAll('.notif')) {
+    el.addEventListener('change', async () => {
+      try { await api('/profile/preferences', { method: 'PATCH', json: { [el.id]: el.checked } }); prefs[el.id] = el.checked; toast('Notificaciones actualizadas'); }
+      catch (err) { el.checked = !el.checked; toast(err.message, true); }
+    });
+  }
+
+  $('passwordForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target.elements;
+    if (f.newPassword.value !== f.confirmPassword.value) return toast('Las contraseñas no coinciden', true);
+    try {
+      const r = await api('/profile/password', { method: 'PUT', json: {
+        currentPassword: f.currentPassword.value, newPassword: f.newPassword.value, confirmPassword: f.confirmPassword.value } });
+      e.target.reset(); toast(r.message);
+    } catch (err) { toast(err.message, true); }
+  });
+
+  // ---------------------------------------------------------------- inicio
+  if (token) loadAll().catch(logout); else logout();
+})();
+</script>
+</body>
+</html>

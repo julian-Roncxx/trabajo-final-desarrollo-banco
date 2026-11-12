@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BckdBank</title>
+<style>
+  :root {
+    --primary: #2563EB; --accent: #10B981;
+    --bg: #F5F7FB; --surface: #FFFFFF; --text: #0F172A; --muted: #64748B; --border: #E2E8F0;
+    --danger: #DC2626; --ok: #059669;
+    --radius: 14px; --gap: 20px; --font-size: 15px;
+  }
+  [data-theme="dark"] { --bg: #0B1120; --surface: #141B2D; --text: #E2E8F0; --muted: #94A3B8; --border: #243049; }
+  [data-compact="true"] { --gap: 12px; --radius: 10px; }
+  * { box-sizing: border-box; }
+  html { font-size: var(--font-size); }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); transition: background .2s, color .2s; }
+  .hidden { display: none !important; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; padding: 9px 16px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  button:disabled { opacity: .6; cursor: default; }
+  input, select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; width: 100%; }
+  input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  label { display: grid; gap: 6px; font-size: .85rem; color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: calc(var(--gap) + 4px); }
+  .card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+  .sub { margin: 0 0 var(--gap); color: var(--muted); font-size: .9rem; }
+
+  /* ---------- Acceso ---------- */
+  #auth { min-height: 100vh; display: grid; place-items: center; padding: 20px;
+    background: linear-gradient(135deg, var(--primary), var(--accent)); }
+  #auth .card { width: 100%; max-width: 400px; }
+  .brand { font-weight: 800; font-size: 1.6rem; margin: 0 0 4px; color: var(--primary); }
+  .tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 10px; margin-bottom: 18px; }
+  .tabs button { flex: 1; border: 0; background: transparent; }
+  .tabs button[aria-selected="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  form.stack { display: grid; gap: 14px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ---------- App ---------- */
+  .layout { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+  aside { background: var(--surface); border-right: 1px solid var(--border); padding: 20px 14px;
+    display: flex; flex-direction: column; gap: 6px; }
+  aside .brand { padding: 0 10px 14px; font-size: 1.3rem; }
+  nav a { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px;
+    color: var(--text); text-decoration: none; font-size: .95rem; }
+  nav a:hover { background: var(--bg); }
+  nav a[aria-current="page"] { background: var(--primary); color: #fff; }
+  .me { margin-top: auto; display: flex; gap: 10px; align-items: center; padding: 10px;
+    border-top: 1px solid var(--border); }
+  .me .who { flex: 1; min-width: 0; font-size: .85rem; }
+  .me .who b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .me .who a { color: var(--muted); font-size: .8rem; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+    display: grid; place-items: center; color: #fff; font-weight: 700; background: var(--primary); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  main { padding: calc(var(--gap) + 8px); display: grid; gap: var(--gap); align-content: start;
+    max-width: 1000px; width: 100%; }
+  .page-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .page-title h1 { margin: 0; font-size: 1.5rem; }
+
+  .total { background: linear-gradient(135deg, var(--primary), var(--accent)); color: #fff; border: 0; }
+  .total .label { opacity: .85; font-size: .9rem; }
+  .total .amount { font-size: 2.2rem; font-weight: 700; margin: 6px 0 4px; font-variant-numeric: tabular-nums; }
+  .total button { background: rgba(255,255,255,.2); color: #fff; border: 0; padding: 6px 12px; }
+  .accounts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gap); }
+  .acc .type { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .acc .num { font-family: ui-monospace, Consolas, monospace; font-size: 1.05rem; margin: 6px 0; display: flex;
+    align-items: center; gap: 8px; }
+  .acc .num button { padding: 2px 8px; font-size: .75rem; }
+  .acc .bal { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .acc .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .acc .actions button { flex: 1; padding: 7px; font-size: .85rem; }
+
+  .tx { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .tx:last-child { border-bottom: 0; }
+  .tx .icon { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
+  .tx .icon.out { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+  .tx .icon.in { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); }
+  .tx .info { flex: 1; min-width: 0; }
+  .tx .info b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx .info small { color: var(--muted); }
+  .tx .amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tx .amt.out { color: var(--danger); } .tx .amt.in { color: var(--ok); }
+  .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+
+  .receipt { border: 2px dashed var(--accent); border-radius: var(--radius); padding: 18px; display: grid; gap: 6px; }
+  .receipt h3 { margin: 0 0 6px; color: var(--ok); }
+  .receipt div { display: flex; justify-content: space-between; gap: 12px; font-size: .92rem; }
+  .receipt div span:first-child { color: var(--muted); }
+
+  #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--text);
+    color: var(--bg); padding: 10px 18px; border-radius: 10px; font-size: .9rem; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 10; }
+  #toast.show { opacity: 1; } #toast.error { background: var(--danger); color: #fff; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { flex-direction: row; flex-wrap: wrap; align-items: center; border-right: 0; border-bottom: 1px solid var(--border); padding: 10px; }
+    aside .brand { padding: 0 8px; }
+    nav { display: flex; gap: 4px; flex-wrap: wrap; }
+    .me { margin: 0; border: 0; width: 100%; }
+    .row2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================ ACCESO ============================ -->
+<section id="auth" class="hidden">
+  <div class="card">
+    <p class="brand">BckdBank</p>
+    <p class="sub">Tu banca digital</p>
+    <div class="tabs" role="tablist">
+      <button type="button" data-tab="login" aria-selected="true">Iniciar sesión</button>
+      <button type="button" data-tab="register" aria-selected="false">Crear cuenta</button>
+    </div>
+    <form id="loginForm" class="stack">
+      <label>Correo <input name="email" type="email" required autocomplete="username"></label>
+      <label>Contraseña <input name="password" type="password" required autocomplete="current-password"></label>
+      <button class="primary" type="submit">Entrar</button>
+    </form>
+    <form id="registerForm" class="stack hidden">
+      <div class="row2">
+        <label>Nombre <input name="firstName" required maxlength="50"></label>
+        <label>Apellido <input name="lastName" required maxlength="50"></label>
+      </div>
+      <label>Correo <input name="email" type="email" required autocomplete="username"></label>
+      <label>Contraseña <input name="password" type="password" required minlength="6" autocomplete="new-password"></label>
+      <button class="primary" type="submit">Crear cuenta</button>
+      <p class="sub" style="margin:0;font-size:.8rem">Al registrarte recibes una cuenta de ahorros con saldo de prueba.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ============================ APP ============================ -->
+<div id="app" class="layout hidden">
+  <aside>
+    <p class="brand">BckdBank</p>
+    <nav>
+      <a href="#inicio" data-page="inicio">🏠 Inicio</a>
+      <a href="#transferir" data-page="transferir">💸 Transferir</a>
+      <a href="#movimientos" data-page="movimientos">📄 Movimientos</a>
+      <a href="perfil.html">👤 Mi perfil</a>
+    </nav>
+    <div class="me">
+      <div class="avatar" id="meAvatar"></div>
+      <div class="who"><b id="meName"></b><a href="#" id="logoutBtn">Cerrar sesión</a></div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- Inicio -->
+    <section data-view="inicio">
+      <div class="page-title" style="margin-bottom:var(--gap)"><h1 id="greeting">Hola</h1></div>
+      <div class="card total" style="margin-bottom:var(--gap)">
+        <div class="label">Saldo total</div>
+        <div class="amount" id="totalBalance">—</div>
+        <button type="button" id="toggleBalances">Mostrar saldos</button>
+      </div>
+      <h2 style="font-size:1.05rem;margin:0 0 12px">Mis cuentas</h2>
+      <div class="accounts" id="accountsList"></div>
+    </section>
+
+    <!-- Transferir -->
+    <section data-view="transferir" class="hidden">
+      <div class="page-title" style="margin-bottom:var(--gap)"><h1>Transferir</h1></div>
+      <div class="card">
+        <h2>Nueva transferencia</h2>
+        <p class="sub">Envía dinero a cualquier cuenta de BckdBank.</p>
+        <form id="transferForm" class="stack" style="max-width:520px">
+          <label>Desde <select name="sourceAccountNumber" id="sourceSelect" required></select></label>
+          <label>Cuenta destino <input name="destinationAccountNumber" required inputmode="numeric" maxlength="20" placeholder="Ej: 1008123456"></label>
+          <label>Monto <input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></label>
+          <label>Descripción (opcional) <input name="description" maxlength="255" placeholder="Ej: Pago arriendo"></label>
+          <button class="primary" type="submit" id="transferBtn">Transferir</button>
+        </form>
+        <div id="receipt" class="receipt hidden" style="margin-top:var(--gap);max-width:520px"></div>
+      </div>
+    </section>
+
+    <!-- Movimientos -->
+    <section data-view="movimientos" class="hidden">
+      <div class="page-title" style="margin-bottom:var(--gap)">
+        <h1>Movimientos</h1>
+        <select id="historySelect" style="max-width:260px"></select>
+      </div>
+      <div class="card"><div id="historyList"></div></div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(() => {
+  const API = '/api/v1';
+  const $ = (id) => document.getElementById(id);
+  const FONT = { SMALL: '13.5px', MEDIUM: '15px', LARGE: '17px' };
+  const LOCALE = { ES: 'es-CO', EN: 'en-US', PT: 'pt-BR' };
+  const TYPE = { SAVINGS: 'Cuenta de ahorros', CHECKING: 'Cuenta corriente' };
+
+  let token = null;
+  try { token = localStorage.getItem('bckdbank_token'); } catch (_) {}
+  let profile = null, prefs = null, accounts = [];
+  let showBalances = true;
+
+  // ------------------------------------------------------------ utilidades
+  function toast(msg, isError = false) {
+    const t = $('toast'); t.textContent = msg; t.className = 'show' + (isError ? ' error' : '');
+    clearTimeout(t._h); t._h = setTimeout(() => (t.className = ''), 3000);
+  }
+  async function api(path, opts = {}) {
+    const headers = Object.assign({}, opts.headers || {});
+    if (token) headers.Authorization = 'Bearer ' + token;
+    if (opts.json !== undefined) { headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(opts.json); }
+    const res = await fetch(API + path, { ...opts, headers });
+    if ((res.status === 401 || res.status === 403) && !path.startsWith('/auth')) { logout(); throw new Error('Tu sesión expiró'); }
+    if (!res.ok) {
+      let msg = res.status === 401 || res.status === 403 ? 'Correo o contraseña incorrectos' : 'Error ' + res.status;
+      try { const e = await res.json(); msg = e.message || (e.details ? Object.values(e.details).join('. ') : msg); } catch (_) {}
+      throw new Error(msg);
+    }
+    return (res.headers.get('Content-Type') || '').includes('application/json') ? res.json() : res;
+  }
+  const money = (n) => new Intl.NumberFormat(LOCALE[prefs?.language] || 'es-CO',
+    { style: 'currency', currency: prefs?.currency || 'COP' }).format(Number(n) || 0);
+  const shown = (n) => showBalances ? money(n) : '••••••';
+  const fmtDate = (s) => s ? new Date(s).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+  const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+
+  // ------------------------------------------------------------ tema
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+  function applyTheme() {
+    if (!prefs) return;
+    const r = document.documentElement;
+    r.style.setProperty('--primary', prefs.primaryColor);
+    r.style.setProperty('--accent', prefs.accentColor);
+    r.style.setProperty('--font-size', FONT[prefs.fontSize] || FONT.MEDIUM);
+    r.dataset.theme = prefs.themeMode === 'DARK' || (prefs.themeMode === 'SYSTEM' && systemDark.matches) ? 'dark' : 'light';
+    r.dataset.compact = String(!!prefs.compactMode);
+  }
+  systemDark.addEventListener('change', applyTheme);
+
+  // ------------------------------------------------------------ sesión
+  function setToken(t) { token = t; try { t ? localStorage.setItem('bckdbank_token', t) : localStorage.removeItem('bckdbank_token'); } catch (_) {} }
+  function logout() {
+    setToken(null); profile = prefs = null; accounts = [];
+    document.documentElement.removeAttribute('style'); document.documentElement.dataset.theme = 'light';
+    $('app').classList.add('hidden'); $('auth').classList.remove('hidden');
+  }
+
+  for (const b of document.querySelectorAll('.tabs button')) {
+    b.addEventListener('click', () => {
+      for (const x of document.querySelectorAll('.tabs button')) x.setAttribute('aria-selected', String(x === b));
+      $('loginForm').classList.toggle('hidden', b.dataset.tab !== 'login');
+      $('registerForm').classList.toggle('hidden', b.dataset.tab !== 'register');
+    });
+  }
+  $('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); const f = e.target.elements;
+    try { setToken((await api('/auth/login', { method: 'POST', json: { email: f.email.value, password: f.password.value } })).token); await start(); }
+    catch (err) { toast(err.message, true); }
+  });
+  $('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); const f = e.target.elements;
+    try {
+      const r = await api('/auth/register', { method: 'POST', json: {
+        firstName: f.firstName.value, lastName: f.lastName.value, email: f.email.value, password: f.password.value } });
+      setToken(r.token); await start(); toast('¡Bienvenido a BckdBank!');
+    } catch (err) { toast(err.message, true); }
+  });
+  $('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); logout(); });
+
+  // ------------------------------------------------------------ carga
+  async function start() {
+    const [p, accs] = await Promise.all([api('/profile'), api('/accounts')]);
+    profile = p; prefs = p.preferences; accounts = accs;
+    showBalances = !prefs.hideBalances;
+    applyTheme();
+    await renderMe();
+    renderAccounts(); fillSelects();
+    $('auth').classList.add('hidden'); $('app').classList.remove('hidden');
+    route();
+  }
+
+  async function renderMe() {
+    $('meName').textContent = profile.displayName || profile.firstName;
+    $('greeting').textContent = `Hola, ${profile.displayName || profile.firstName} 👋`;
+    const box = $('meAvatar'); box.replaceChildren(); box.style.background = profile.avatarColor || 'var(--primary)';
+    if (profile.hasAvatar) {
+      try { const img = el('img', { alt: '' }); img.src = URL.createObjectURL(await (await api('/profile/avatar')).blob()); box.append(img); return; } catch (_) {}
+    }
+    box.textContent = profile.initials || '?';
+  }
+
+  function renderAccounts() {
+    const total = accounts.reduce((s, a) => s + Number(a.balance), 0);
+    $('totalBalance').textContent = shown(total);
+    $('toggleBalances').textContent = showBalances ? 'Ocultar saldos' : 'Mostrar saldos';
+    const list = $('accountsList');
+    if (!accounts.length) { list.replaceChildren(el('p', { className: 'empty', textContent: 'No tienes cuentas.' })); return; }
+    list.replaceChildren(...accounts.map((a) => {
+      const copy = el('button', { type: 'button', textContent: 'Copiar' });
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(a.accountNumber); toast('Número copiado'); } catch (_) { toast(a.accountNumber); }
+      });
+      const send = el('button', { type: 'button', className: 'primary', textContent: 'Transferir' });
+      send.addEventListener('click', () => { $('sourceSelect').value = a.accountNumber; location.hash = 'transferir'; });
+      const hist = el('button', { type: 'button', textContent: 'Movimientos' });
+      hist.addEventListener('click', () => { $('historySelect').value = a.accountNumber; location.hash = 'movimientos'; });
+      return el('div', { className: 'card acc' },
+        el('div', { className: 'type', textContent: TYPE[a.accountType] || a.accountType }),
+        el('div', { className: 'num' }, a.accountNumber, copy),
+        el('div', { className: 'bal', textContent: shown(a.balance) }),
+        el('div', { className: 'actions' }, send, hist));
+    }));
+  }
+  $('toggleBalances').addEventListener('click', () => { showBalances = !showBalances; renderAccounts(); });
+
+  function fillSelects() {
+    for (const id of ['sourceSelect', 'historySelect']) {
+      const s = $(id), prev = s.value;
+      s.replaceChildren(...accounts.map((a) => el('option', { value: a.accountNumber,
+        textContent: `${TYPE[a.accountType] || a.accountType} · ${a.accountNumber}` })));
+      if (prev && accounts.some((a) => a.accountNumber === prev)) s.value = prev;
+    }
+  }
+
+  // ------------------------------------------------------------ transferir
+  $('transferForm').addEventListener('submit', async (e) => {
+    e.preventDefault(); const f = e.target.elements; const btn = $('transferBtn');
+    const dest = f.destinationAccountNumber.value.trim();
+    if (dest === f.sourceAccountNumber.value) return toast('La cuenta destino debe ser diferente a la de origen', true);
+    btn.disabled = true;
+    try {
+      const tx = await api('/transactions/transfer', { method: 'POST', json: {
+        sourceAccountNumber: f.sourceAccountNumber.value, destinationAccountNumber: dest,
+        amount: f.amount.value, description: f.description.value.trim() } });
+      const row = (k, v) => el('div', {}, el('span', { textContent: k }), el('span', { textContent: v }));
+      $('receipt').replaceChildren(el('h3', { textContent: '✔ Transferencia exitosa' }),
+        row('Comprobante', '#' + tx.id), row('Desde', tx.sourceAccountNumber), row('Hacia', tx.destinationAccount),
+        row('Monto', money(tx.amount)), row('Descripción', tx.description || ''), row('Fecha', fmtDate(tx.timestamp)));
+      $('receipt').classList.remove('hidden');
+      f.destinationAccountNumber.value = ''; f.amount.value = ''; f.description.value = '';
+      accounts = await api('/accounts'); renderAccounts();
+      toast('Transferencia realizada');
+    } catch (err) { toast(err.message, true); }
+    finally { btn.disabled = false; }
+  });
+
+  // ------------------------------------------------------------ movimientos
+  async function loadHistory() {
+    const num = $('historySelect').value, list = $('historyList');
+    if (!num) { list.replaceChildren(el('p', { className: 'empty', textContent: 'No tienes cuentas.' })); return; }
+    list.replaceChildren(el('p', { className: 'empty', textContent: 'Cargando…' }));
+    try {
+      const txs = await api('/transactions/account/' + encodeURIComponent(num));
+      if (!txs.length) { list.replaceChildren(el('p', { className: 'empty', textContent: 'Aún no hay movimientos en esta cuenta.' })); return; }
+      txs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      list.replaceChildren(...txs.map((t) => {
+        const out = t.sourceAccountNumber === num, dir = out ? 'out' : 'in';
+        return el('div', { className: 'tx' },
+          el('div', { className: 'icon ' + dir, textContent: out ? '↑' : '↓' }),
+          el('div', { className: 'info' },
+            el('b', { textContent: t.description || 'Transferencia' }),
+            el('small', { textContent: (out ? 'Enviado a ' + t.destinationAccount : 'Recibido de ' + t.sourceAccountNumber) + ' · ' + fmtDate(t.timestamp) })),
+          el('div', { className: 'amt ' + dir, textContent: (out ? '− ' : '+ ') + money(t.amount) }));
+      }));
+    } catch (err) { list.replaceChildren(el('p', { className: 'empty', textContent: err.message })); }
+  }
+  $('historySelect').addEventListener('change', loadHistory);
+
+  // ------------------------------------------------------------ navegación
+  function route() {
+    const page = (location.hash || '#inicio').slice(1);
+    const valid = ['inicio', 'transferir', 'movimientos'].includes(page) ? page : 'inicio';
+    for (const s of document.querySelectorAll('[data-view]')) s.classList.toggle('hidden', s.dataset.view !== valid);
+    for (const a of document.querySelectorAll('nav a[data-page]')) {
+      if (a.dataset.page === valid) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    }
+    if (valid === 'transferir') $('receipt').classList.add('hidden');
+    if (valid === 'movimientos' && profile) loadHistory();
+  }
+  window.addEventListener('hashchange', () => profile && route());
+
+  if (token) start().catch(logout); else logout();
+})();
+</script>
+</body>
+</html>
